@@ -19,7 +19,7 @@ export class RemotePlayer {
     this.targetY = y;
 
     this.sprite = scene.add.image(x, y, `char_${character}`);
-    this.sprite.setDisplaySize(36, 36);
+    this.sprite.setDisplaySize(144, 144);
     this.sprite.setDepth(4);
   }
 

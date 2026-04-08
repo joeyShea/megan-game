@@ -8,6 +8,10 @@ import GameScreen from './screens/GameScreen';
 import WinScreen from './screens/WinScreen';
 import './App.css';
 
+// In dev VITE_BACKEND_URL is unset → API = '/api' → Vite proxy strips prefix and forwards to :8000
+// In production VITE_BACKEND_URL = 'https://…' → fetch hits backend directly (no prefix needed)
+const API = (import.meta.env.VITE_BACKEND_URL ?? '/api').replace(/\/$/, '');
+
 export default function App() {
   const [screen, setScreen] = useState<ScreenName>('home');
   const [lobbyCode, setLobbyCode] = useState('');
@@ -32,7 +36,7 @@ export default function App() {
 
   const handleCreateLobby = async () => {
     try {
-      const res = await fetch('/api/lobbies', { method: 'POST' });
+      const res = await fetch(`${API}/lobbies`, { method: 'POST' });
       if (!res.ok) throw new Error('Server error');
       const data = await res.json();
       setLobbyCode(data.lobby_code);
@@ -46,14 +50,14 @@ export default function App() {
 
   const handleJoinLobby = async (code: string) => {
     try {
-      const infoRes = await fetch(`/api/lobbies/${code}/info`);
+      const infoRes = await fetch(`${API}/lobbies/${code}/info`);
       if (!infoRes.ok) throw new Error('Server error');
       const info = await infoRes.json();
       if (!info.exists) { alert('Lobby not found.'); return; }
       if (info.started) { alert('Game already started.'); return; }
       if (info.player_count >= 4) { alert('Lobby is full.'); return; }
 
-      const res = await fetch(`/api/lobbies/${code}/join`, { method: 'POST' });
+      const res = await fetch(`${API}/lobbies/${code}/join`, { method: 'POST' });
       if (!res.ok) { const e = await res.json(); alert(e.detail ?? 'Could not join'); return; }
       const data = await res.json();
       setLobbyCode(code.toUpperCase());

@@ -40,6 +40,7 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     this.cameras.main.setBounds(0, 0, MAP_W, MAP_H);
+    this.cameras.main.setZoom(1);
 
     this.buildMap();
     this.spawnPlayers();
@@ -164,7 +165,7 @@ export class GameScene extends Phaser.Scene {
         const { x, y } = proj.getPos();
         const lp = this.localPlayer!;
         const dist = Phaser.Math.Distance.Between(x, y, lp.sprite.x, lp.sprite.y);
-        const hitRadius = proj.data.radius > 0 ? proj.data.radius : 16;
+        const hitRadius = proj.data.radius > 0 ? proj.data.radius : 55;
         if (dist < hitRadius) {
           wsClient.send({
             type: 'hit_detected',
@@ -189,7 +190,7 @@ export class GameScene extends Phaser.Scene {
     this.children.list.forEach((child: any) => {
       if (child._weapon && child._active) {
         const dist = Phaser.Math.Distance.Between(child.x, child.y, lp.sprite.x, lp.sprite.y);
-        if (dist < 24) {
+        if (dist < 80) {
           child._active = false;
           child.setVisible(false);
           lp.weaponSystem.setWeapon(child._weapon);
@@ -226,10 +227,12 @@ export class GameScene extends Phaser.Scene {
   private handleWorldState(msg: any) {
     for (const ps of (msg.players ?? [])) {
       if (ps.player_id === this.playerId) {
-        // Update server-auth health for local player
         if (this.localPlayer) {
           this.localPlayer.applyHealth(ps.health);
           this.game.events.emit('health_update', { playerId: ps.player_id, health: ps.health });
+          window.dispatchEvent(new CustomEvent('healthChanged', {
+            detail: { health: ps.health, maxHealth: this.localPlayer!.maxHealth },
+          }));
         }
         continue;
       }
@@ -269,7 +272,6 @@ export class GameScene extends Phaser.Scene {
   private handleHitRegistered(msg: any) {
     const proj = this.projectiles.get(msg.projectile_id);
     if (proj) {
-      // Show small flash at projectile position
       this.showHitFlash(proj.getPos().x, proj.getPos().y);
       proj.destroy();
       this.projectiles.delete(msg.projectile_id);
@@ -278,10 +280,16 @@ export class GameScene extends Phaser.Scene {
     // Update target health
     if (msg.target_id === this.playerId) {
       this.localPlayer?.applyHealth(msg.new_health);
+      window.dispatchEvent(new CustomEvent('healthChanged', {
+        detail: { health: msg.new_health, maxHealth: this.localPlayer!.maxHealth },
+      }));
     } else {
       this.remotePlayers.get(msg.target_id)?.applyHealth(msg.new_health);
     }
     this.game.events.emit('health_update', { playerId: msg.target_id, health: msg.new_health });
+
+    // Floating damage number above the hit player
+    this.showDamageNumber(msg.target_id, msg.damage);
   }
 
   private handlePlayerDied(msg: any) {
@@ -304,18 +312,55 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showHitFlash(x: number, y: number) {
-    const flash = this.add.circle(x, y, 12, 0xffffff, 0.7).setDepth(6);
+    const flash = this.add.circle(x, y, 20, 0xffffff, 0.65).setDepth(6);
     this.tweens.add({
       targets: flash,
-      alpha: 0, scale: 2,
-      duration: 200,
+      alpha: 0, scale: 3,
+      duration: 220,
       onComplete: () => flash.destroy(),
+    });
+  }
+
+  private showDamageNumber(targetId: string, damage: number) {
+    let sprite: Phaser.GameObjects.Image | null = null;
+    if (targetId === this.playerId) {
+      sprite = this.localPlayer?.sprite ?? null;
+    } else {
+      sprite = this.remotePlayers.get(targetId)?.sprite ?? null;
+    }
+    if (!sprite) return;
+
+    const label = `-${Math.round(damage)}`;
+    const isLocalPlayer = targetId === this.playerId;
+    const color = isLocalPlayer ? '#ff4040' : '#ffcc44';
+
+    const text = this.add.text(
+      sprite.x + Phaser.Math.Between(-18, 18),
+      sprite.y - 80,
+      label,
+      {
+        fontSize: '22px',
+        fontFamily: 'Georgia, serif',
+        fontStyle: 'bold',
+        color,
+        stroke: '#1a0a00',
+        strokeThickness: 4,
+      }
+    ).setDepth(25).setOrigin(0.5, 1);
+
+    this.tweens.add({
+      targets: text,
+      y: sprite.y - 160,
+      alpha: 0,
+      duration: 900,
+      ease: 'Power2',
+      onComplete: () => text.destroy(),
     });
   }
 
   /** Called by UIScene to get screen-space position of a player sprite. */
   getPlayerScreenPos(playerId: string): { sx: number; sy: number } | null {
-    let sprite: Phaser.GameObjects.Image | Phaser.Physics.Arcade.Image | null = null;
+    let sprite: Phaser.GameObjects.Image | null = null;
     if (playerId === this.playerId) {
       sprite = this.localPlayer?.sprite ?? null;
     } else {

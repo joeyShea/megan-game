@@ -3,8 +3,8 @@ import type { CharacterType } from '../../types';
 import { CHARACTER_STATS, NETWORK_TICK_MS, MAP_WORLD_WIDTH, MAP_WORLD_HEIGHT } from '../../constants';
 import { WeaponSystem } from './WeaponSystem';
 
-// Half the wall tile size — keeps the player inside the playable area
-const WALL_MARGIN = 36;
+// Keeps the player inside the playable area (half sprite display size)
+const WALL_MARGIN = 72;
 
 export class LocalPlayer {
   public sprite: Phaser.GameObjects.Image;
@@ -51,7 +51,7 @@ export class LocalPlayer {
 
     // Plain image — no Arcade Physics (avoids Phaser 3.87 ArcadeBody init bug)
     this.sprite = scene.add.image(x, y, `char_${character}`);
-    this.sprite.setDisplaySize(36, 36);
+    this.sprite.setDisplaySize(144, 144);
     this.sprite.setDepth(5);
 
     const kb = scene.input.keyboard!;

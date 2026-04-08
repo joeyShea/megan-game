@@ -109,17 +109,22 @@ export class SpriteFactory {
   }
 
   private genHealthBar() {
-    this.draw('hpbar_bg', 40, 6, (g) => {
-      g.fillStyle(0x333333, 0.7);
-      g.fillRoundedRect(0, 0, 40, 6, 3);
+    const W = 80, H = 8;
+    this.draw('hpbar_bg', W, H, (g) => {
+      g.fillStyle(0x1a1a1a, 0.75);
+      g.fillRoundedRect(0, 0, W, H, 4);
     });
-    this.draw('hpbar_fill', 40, 6, (g) => {
-      g.fillStyle(0x44cc44, 1);
-      g.fillRoundedRect(0, 0, 40, 6, 3);
+    this.draw('hpbar_fill', W, H, (g) => {
+      g.fillStyle(0x4ade80, 1);
+      g.fillRoundedRect(0, 0, W, H, 4);
     });
-    this.draw('hpbar_fill_low', 40, 6, (g) => {
-      g.fillStyle(0xee4444, 1);
-      g.fillRoundedRect(0, 0, 40, 6, 3);
+    this.draw('hpbar_fill_mid', W, H, (g) => {
+      g.fillStyle(0xfbbf24, 1);
+      g.fillRoundedRect(0, 0, W, H, 4);
+    });
+    this.draw('hpbar_fill_low', W, H, (g) => {
+      g.fillStyle(0xf87171, 1);
+      g.fillRoundedRect(0, 0, W, H, 4);
     });
   }
 }

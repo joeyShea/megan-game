@@ -9,7 +9,13 @@ class WebSocketClient {
 
   connect(lobbyCode: string, playerId: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      const url = `/ws/${lobbyCode}/${playerId}`;
+      // In dev, VITE_BACKEND_URL is unset → Vite proxy handles /ws/*
+      // In production, it's the full backend URL (https://…)
+      const backendUrl = (import.meta.env.VITE_BACKEND_URL ?? '').replace(/\/$/, '');
+      const wsBase = backendUrl
+        ? backendUrl.replace(/^https:\/\//, 'wss://').replace(/^http:\/\//, 'ws://')
+        : '';
+      const url = wsBase ? `${wsBase}/ws/${lobbyCode}/${playerId}` : `/ws/${lobbyCode}/${playerId}`;
       this.ws = new WebSocket(url);
 
       this.ws.onopen = () => resolve();
