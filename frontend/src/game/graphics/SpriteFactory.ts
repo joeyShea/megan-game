@@ -18,6 +18,7 @@ export class SpriteFactory {
     this.genTiles();
     this.genPickup();
     this.genHealthBar();
+    this.genObstacle();
   }
 
   private draw(key: string, w: number, h: number, fn: (g: Phaser.GameObjects.Graphics) => void) {
@@ -106,6 +107,23 @@ export class SpriteFactory {
         g.strokeCircle(12, 12, 11);
       });
     }
+  }
+
+  private genObstacle() {
+    const S = 36;
+    this.draw('obstacle', S, S, (g) => {
+      // Dark espresso base
+      g.fillStyle(0x2e1a0e, 1);
+      g.fillRoundedRect(2, 2, S - 4, S - 4, 6);
+      // Inner coffee ring highlight
+      g.lineStyle(2, 0x7a5438, 0.7);
+      g.strokeRoundedRect(5, 5, S - 10, S - 10, 4);
+      // Small coffee bean in center
+      g.fillStyle(0x6f4e37, 0.9);
+      g.fillEllipse(S / 2, S / 2, 14, 10);
+      g.lineStyle(1, 0x1a0a00, 0.8);
+      g.lineBetween(S / 2 - 5, S / 2, S / 2 + 5, S / 2);
+    });
   }
 
   private genHealthBar() {

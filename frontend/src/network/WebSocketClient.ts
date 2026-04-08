@@ -47,7 +47,8 @@ class WebSocketClient {
     this.ws?.close();
     this.ws = null;
     this.messageQueue = [];
-    this.handlers.clear();
+    // Do NOT clear handlers — React useEffect subscriptions are registered once
+    // and must survive across lobby reconnections (play again flow).
   }
 
   send(msg: object) {

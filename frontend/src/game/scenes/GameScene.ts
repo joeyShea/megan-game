@@ -28,6 +28,7 @@ export class GameScene extends Phaser.Scene {
   private playerId = '';
   private playerList: PlayerInfo[] = [];
   private displayNames: Map<string, string> = new Map();
+  private obstaclePositions: { x: number; y: number }[] = [];
 
   constructor() {
     super({ key: 'GameScene' });
@@ -43,6 +44,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setZoom(1);
 
     this.buildMap();
+    this.buildObstacles();
     this.spawnPlayers();
     this.buildWeaponPickups();
 
@@ -83,6 +85,34 @@ export class GameScene extends Phaser.Scene {
           this.add.image(x, y, isDecor ? 'tile_decor' : 'tile_floor').setDepth(0);
         }
       }
+    }
+  }
+
+  private buildObstacles() {
+    const lobbyCode = (this.game.registry.get('lobbyCode') as string) ?? 'AAAA';
+    const rng = seededRng(lobbyCode + '_obs');
+    const OBSTACLE_COUNT = 22;
+    const MARGIN = MAP_TILE_SIZE * 3;       // stay 3 tiles away from walls
+    const SPAWN_CLEAR = 180;                // clear radius around each spawn corner
+
+    const spawnCorners = [
+      { x: 96, y: 96 }, { x: MAP_W - 96, y: 96 },
+      { x: 96, y: MAP_H - 96 }, { x: MAP_W - 96, y: MAP_H - 96 },
+    ];
+
+    for (let i = 0; i < OBSTACLE_COUNT; i++) {
+      let x = 0, y = 0, attempts = 0;
+      do {
+        x = MARGIN + rng() * (MAP_W - MARGIN * 2);
+        y = MARGIN + rng() * (MAP_H - MARGIN * 2);
+        attempts++;
+      } while (
+        attempts < 50 &&
+        spawnCorners.some((c) => Phaser.Math.Distance.Between(x, y, c.x, c.y) < SPAWN_CLEAR)
+      );
+
+      this.obstaclePositions.push({ x, y });
+      this.add.image(x, y, 'obstacle').setDepth(2);
     }
   }
 
@@ -182,6 +212,24 @@ export class GameScene extends Phaser.Scene {
 
     // Weapon pickup detection
     this.checkWeaponPickups();
+
+    // Obstacle collision
+    this.checkObstacles();
+  }
+
+  private checkObstacles() {
+    if (!this.localPlayer?.alive || this.localPlayer.stunned) return;
+    const lp = this.localPlayer;
+    for (const obs of this.obstaclePositions) {
+      if (Phaser.Math.Distance.Between(lp.sprite.x, lp.sprite.y, obs.x, obs.y) < 30) {
+        // Push player back slightly so they don't re-trigger immediately on resume
+        const angle = Phaser.Math.Angle.Between(obs.x, obs.y, lp.sprite.x, lp.sprite.y);
+        lp.sprite.x += Math.cos(angle) * 36;
+        lp.sprite.y += Math.sin(angle) * 36;
+        lp.stun();
+        break;
+      }
+    }
   }
 
   private checkWeaponPickups() {
@@ -277,14 +325,20 @@ export class GameScene extends Phaser.Scene {
       this.projectiles.delete(msg.projectile_id);
     }
 
-    // Update target health
+    // Update target health + flash red
     if (msg.target_id === this.playerId) {
       this.localPlayer?.applyHealth(msg.new_health);
+      this.localPlayer?.flashDamage();
       window.dispatchEvent(new CustomEvent('healthChanged', {
         detail: { health: msg.new_health, maxHealth: this.localPlayer!.maxHealth },
       }));
     } else {
-      this.remotePlayers.get(msg.target_id)?.applyHealth(msg.new_health);
+      const rp = this.remotePlayers.get(msg.target_id);
+      rp?.applyHealth(msg.new_health);
+      if (rp) {
+        rp.sprite.setTint(0xff2222);
+        this.time.delayedCall(160, () => { if (rp.sprite.active) rp.sprite.clearTint(); });
+      }
     }
     this.game.events.emit('health_update', { playerId: msg.target_id, health: msg.new_health });
 

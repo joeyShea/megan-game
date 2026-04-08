@@ -73,9 +73,9 @@ export interface WeaponStats {
 }
 
 export const WEAPON_STATS: Record<WeaponType, WeaponStats> = {
-  coffee_bean:  { speed: 480, damage: 12, radius: 0,  bounces: 0, color: 0x3d1c02, label: 'Coffee Bean'  },
-  steam_blast:  { speed: 180, damage: 35, radius: 80, bounces: 0, color: 0xe8e8e8, label: 'Steam Blast'  },
-  milk_frother: { speed: 300, damage: 18, radius: 0,  bounces: 3, color: 0xffffff, label: 'Milk Frother' },
+  coffee_bean:  { speed: 480, damage: 6,  radius: 0,  bounces: 0, color: 0x3d1c02, label: 'Coffee Bean'  },
+  steam_blast:  { speed: 180, damage: 16, radius: 80, bounces: 0, color: 0xe8e8e8, label: 'Steam Blast'  },
+  milk_frother: { speed: 300, damage: 9,  radius: 0,  bounces: 3, color: 0xffffff, label: 'Milk Frother' },
 };
 
 export const WEAPONS: WeaponType[] = ['coffee_bean', 'steam_blast', 'milk_frother'];

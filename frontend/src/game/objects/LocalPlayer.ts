@@ -11,8 +11,10 @@ export class LocalPlayer {
   public health: number;
   public maxHealth: number;
   public alive = true;
+  public stunned = false;
   public character: CharacterType;
   public weaponSystem: WeaponSystem;
+  private scene: Phaser.Scene;
   private playerId: string;
   private onFireWeapon: (ws: WeaponSystem) => void;
   private onStateUpdate: (state: object) => void;
@@ -45,6 +47,7 @@ export class LocalPlayer {
     this.onFireWeapon = onFireWeapon;
     this.onStateUpdate = onStateUpdate;
 
+    this.scene = scene;
     const stats = CHARACTER_STATS[character];
     this.maxHealth = stats.maxHealth;
     this.health = stats.maxHealth;
@@ -69,8 +72,34 @@ export class LocalPlayer {
     };
   }
 
+  /** Hit an obstacle — freeze movement and spin 360°. */
+  stun() {
+    if (this.stunned || !this.alive) return;
+    this.stunned = true;
+    const fullSpin = this.sprite.rotation + Math.PI * 2;
+    this.scene.tweens.add({
+      targets: this.sprite,
+      rotation: fullSpin,
+      duration: 650,
+      ease: 'Cubic.easeInOut',
+      onComplete: () => {
+        this.stunned = false;
+      },
+    });
+  }
+
+  /** Flash sprite red briefly to indicate damage received. */
+  flashDamage() {
+    if (!this.alive) return;
+    this.sprite.setTint(0xff2222);
+    this.scene.time.delayedCall(160, () => {
+      if (this.sprite.active) this.sprite.clearTint();
+    });
+  }
+
   update(time: number, delta: number) {
     if (!this.alive) return;
+    if (this.stunned) return;
 
     const dt = delta / 1000;
     const stats = CHARACTER_STATS[this.character];
