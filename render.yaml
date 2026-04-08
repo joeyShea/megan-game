@@ -20,7 +20,6 @@ services:
   - type: web
     name: megan-game-frontend
     env: static
-    region: oregon
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
