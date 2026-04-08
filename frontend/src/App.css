@@ -1,0 +1,116 @@
+/* ── Global reset & coffee theme ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --cream:      #fdf6e3;
+  --latte:      #d4a574;
+  --espresso:   #3d1c02;
+  --mocha:      #6f4e37;
+  --foam:       #f5e6d0;
+  --steam:      #e8e0d8;
+  --green:      #7dba84;
+  --red:        #e74c3c;
+  --shadow:     rgba(61, 28, 2, 0.15);
+}
+
+html, body, #root {
+  width: 100%; height: 100%;
+  background: var(--cream);
+  font-family: 'Georgia', serif;
+  color: var(--espresso);
+  overflow: hidden;
+}
+
+.app {
+  width: 100vw; height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── Shared UI ── */
+.screen {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 100%; height: 100%;
+  gap: 24px;
+}
+
+.card {
+  background: var(--foam);
+  border: 2px solid var(--latte);
+  border-radius: 16px;
+  padding: 32px 40px;
+  box-shadow: 0 4px 20px var(--shadow);
+  display: flex; flex-direction: column; align-items: center; gap: 20px;
+  min-width: 360px;
+}
+
+h1 { font-size: 2.8rem; color: var(--espresso); letter-spacing: 1px; }
+h2 { font-size: 1.6rem; color: var(--mocha); }
+h3 { font-size: 1.1rem; color: var(--mocha); }
+
+.btn {
+  padding: 12px 32px;
+  font-size: 1.05rem;
+  font-family: inherit;
+  border: none; border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+  background: var(--mocha); color: var(--cream);
+  box-shadow: 0 3px 8px var(--shadow);
+}
+.btn-primary:hover { background: var(--espresso); }
+.btn-secondary {
+  background: var(--steam); color: var(--espresso);
+  box-shadow: 0 2px 6px var(--shadow);
+}
+.btn-secondary:hover { background: var(--latte); color: var(--cream); }
+.btn-success {
+  background: var(--green); color: white;
+  box-shadow: 0 3px 8px var(--shadow);
+}
+.btn-success:hover { filter: brightness(1.1); }
+.btn:disabled {
+  opacity: 0.45; cursor: not-allowed; transform: none;
+}
+
+input.text-input {
+  padding: 10px 16px;
+  font-size: 1.1rem; font-family: inherit;
+  border: 2px solid var(--latte); border-radius: 8px;
+  background: white; color: var(--espresso);
+  outline: none; text-align: center; text-transform: uppercase; letter-spacing: 4px;
+}
+input.text-input:focus { border-color: var(--mocha); }
+
+.subtitle { color: var(--mocha); font-size: 1rem; opacity: 0.8; }
+
+/* ── Lobby code badge ── */
+.lobby-code-badge {
+  background: var(--espresso); color: var(--cream);
+  border-radius: 8px; padding: 6px 20px;
+  font-size: 2rem; font-weight: bold; letter-spacing: 8px;
+  text-align: center;
+}
+
+/* ── Game layout ── */
+.game-screen {
+  position: relative; width: 100vw; height: 100vh; overflow: hidden;
+}
+.game-screen canvas { display: block; }
+
+/* ── HUD overlay ── */
+.hud-overlay {
+  position: absolute; bottom: 20px; right: 20px;
+  pointer-events: none; z-index: 10;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+}
+
+.weapon-label {
+  background: rgba(61,28,2,0.75);
+  color: var(--cream); padding: 4px 14px; border-radius: 20px;
+  font-size: 0.85rem; letter-spacing: 1px;
+}
