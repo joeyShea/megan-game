@@ -31,28 +31,38 @@ export default function App() {
   }, []);
 
   const handleCreateLobby = async () => {
-    const res = await fetch('/api/lobbies', { method: 'POST' });
-    const data = await res.json();
-    setLobbyCode(data.lobby_code);
-    setPlayerId(data.host_player_id);
-    await wsClient.connect(data.lobby_code, data.host_player_id);
-    setScreen('lobby');
+    try {
+      const res = await fetch('/api/lobbies', { method: 'POST' });
+      if (!res.ok) throw new Error('Server error');
+      const data = await res.json();
+      setLobbyCode(data.lobby_code);
+      setPlayerId(data.host_player_id);
+      await wsClient.connect(data.lobby_code, data.host_player_id);
+      setScreen('lobby');
+    } catch {
+      alert('Could not reach the server. Make sure the backend is running on port 8000.');
+    }
   };
 
   const handleJoinLobby = async (code: string) => {
-    const infoRes = await fetch(`/api/lobbies/${code}/info`);
-    const info = await infoRes.json();
-    if (!info.exists) { alert('Lobby not found.'); return; }
-    if (info.started) { alert('Game already started.'); return; }
-    if (info.player_count >= 4) { alert('Lobby is full.'); return; }
+    try {
+      const infoRes = await fetch(`/api/lobbies/${code}/info`);
+      if (!infoRes.ok) throw new Error('Server error');
+      const info = await infoRes.json();
+      if (!info.exists) { alert('Lobby not found.'); return; }
+      if (info.started) { alert('Game already started.'); return; }
+      if (info.player_count >= 4) { alert('Lobby is full.'); return; }
 
-    const res = await fetch(`/api/lobbies/${code}/join`, { method: 'POST' });
-    if (!res.ok) { const e = await res.json(); alert(e.detail ?? 'Could not join'); return; }
-    const data = await res.json();
-    setLobbyCode(code.toUpperCase());
-    setPlayerId(data.player_id);
-    await wsClient.connect(code.toUpperCase(), data.player_id);
-    setScreen('lobby');
+      const res = await fetch(`/api/lobbies/${code}/join`, { method: 'POST' });
+      if (!res.ok) { const e = await res.json(); alert(e.detail ?? 'Could not join'); return; }
+      const data = await res.json();
+      setLobbyCode(code.toUpperCase());
+      setPlayerId(data.player_id);
+      await wsClient.connect(code.toUpperCase(), data.player_id);
+      setScreen('lobby');
+    } catch {
+      alert('Could not reach the server. Make sure the backend is running on port 8000.');
+    }
   };
 
   const handlePlayAgain = () => {

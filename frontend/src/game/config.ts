@@ -16,13 +16,6 @@ export function createPhaserConfig(
     width: window.innerWidth,
     height: window.innerHeight,
     backgroundColor: '#f0e4cc',
-    physics: {
-      default: 'arcade',
-      arcade: {
-        gravity: { x: 0, y: 0 },
-        debug: false,
-      },
-    },
     scene: [BootScene, GameScene, UIScene],
     callbacks: {
       preBoot: (game) => {

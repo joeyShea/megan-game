@@ -1,10 +1,13 @@
 import Phaser from 'phaser';
 import type { CharacterType } from '../../types';
-import { CHARACTER_STATS, NETWORK_TICK_MS } from '../../constants';
+import { CHARACTER_STATS, NETWORK_TICK_MS, MAP_WORLD_WIDTH, MAP_WORLD_HEIGHT } from '../../constants';
 import { WeaponSystem } from './WeaponSystem';
 
+// Half the wall tile size — keeps the player inside the playable area
+const WALL_MARGIN = 36;
+
 export class LocalPlayer {
-  public sprite: Phaser.Physics.Arcade.Image;
+  public sprite: Phaser.GameObjects.Image;
   public health: number;
   public maxHealth: number;
   public alive = true;
@@ -46,10 +49,10 @@ export class LocalPlayer {
     this.maxHealth = stats.maxHealth;
     this.health = stats.maxHealth;
 
-    this.sprite = scene.physics.add.image(x, y, `char_${character}`);
+    // Plain image — no Arcade Physics (avoids Phaser 3.87 ArcadeBody init bug)
+    this.sprite = scene.add.image(x, y, `char_${character}`);
     this.sprite.setDisplaySize(36, 36);
     this.sprite.setDepth(5);
-    this.sprite.setCollideWorldBounds(true);
 
     const kb = scene.input.keyboard!;
     this.keys = {
@@ -66,12 +69,12 @@ export class LocalPlayer {
     };
   }
 
-  update(time: number, _delta: number) {
+  update(time: number, delta: number) {
     if (!this.alive) return;
 
+    const dt = delta / 1000;
     const stats = CHARACTER_STATS[this.character];
     const speed = stats.speed;
-    const body = this.sprite.body as Phaser.Physics.Arcade.Body;
 
     let vx = 0, vy = 0;
     if (this.keys.left.isDown  || this.keys.a.isDown) vx -= speed;
@@ -79,14 +82,16 @@ export class LocalPlayer {
     if (this.keys.up.isDown    || this.keys.w.isDown) vy -= speed;
     if (this.keys.down.isDown  || this.keys.s.isDown) vy += speed;
 
-    // Normalize diagonal
+    // Normalize diagonal movement
     if (vx !== 0 && vy !== 0) {
       vx *= 0.707; vy *= 0.707;
     }
 
-    body.setVelocity(vx, vy);
+    // Apply movement + clamp to world bounds
+    this.sprite.x = Phaser.Math.Clamp(this.sprite.x + vx * dt, WALL_MARGIN, MAP_WORLD_WIDTH  - WALL_MARGIN);
+    this.sprite.y = Phaser.Math.Clamp(this.sprite.y + vy * dt, WALL_MARGIN, MAP_WORLD_HEIGHT - WALL_MARGIN);
 
-    // Rotate sprite to face movement direction
+    // Rotate to face movement direction
     if (vx !== 0 || vy !== 0) {
       this.sprite.setRotation(Math.atan2(vy, vx));
     }
@@ -132,9 +137,6 @@ export class LocalPlayer {
     this.sprite.setTint(0x888888);
     this.sprite.setAlpha(0.55);
     this.sprite.setRotation(0);
-    const body = this.sprite.body as Phaser.Physics.Arcade.Body;
-    body.setVelocity(0, 0);
-    body.enable = false;
   }
 
   getPos() { return { x: this.sprite.x, y: this.sprite.y }; }

@@ -1,5 +1,4 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from fastapi.requests import Request
 
 router = APIRouter()
 
@@ -25,11 +24,12 @@ async def websocket_endpoint(
     websocket: WebSocket,
     lobby_code: str,
     player_id: str,
-    request: Request,
 ):
-    lobby_mgr = request.app.state.lobby_mgr
-    conn_mgr = request.app.state.conn_mgr
-    game_mgr = request.app.state.game_mgr
+    # Access app singletons via websocket.app.state (Request injection
+    # doesn't work in WebSocket endpoints)
+    lobby_mgr = websocket.app.state.lobby_mgr
+    conn_mgr = websocket.app.state.conn_mgr
+    game_mgr = websocket.app.state.game_mgr
 
     lobby_code = lobby_code.upper()
     lobby = lobby_mgr.get_lobby(lobby_code)
@@ -41,9 +41,8 @@ async def websocket_endpoint(
     await websocket.accept()
     conn_mgr.connect(player_id, lobby_code, websocket)
 
-    # Send current lobby state to the new connection
+    # Send current lobby state to the new connection, then broadcast to all
     await conn_mgr.send_to(player_id, _lobby_state_payload(lobby))
-    # Broadcast updated lobby state to everyone
     await conn_mgr.broadcast_to_lobby(lobby_code, _lobby_state_payload(lobby))
 
     try:
@@ -88,14 +87,12 @@ async def websocket_endpoint(
         pass
     finally:
         conn_mgr.disconnect(player_id)
-        # If game not started, remove player from lobby
         if not lobby.game_started:
             lobby_mgr.remove_player(lobby_code, player_id)
             remaining = lobby_mgr.get_lobby(lobby_code)
             if remaining:
                 await conn_mgr.broadcast_to_lobby(lobby_code, _lobby_state_payload(remaining))
         else:
-            # Mark player dead if they disconnect during game
             p = lobby.players.get(player_id)
             if p and p.alive:
                 p.alive = False
